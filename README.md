@@ -30,8 +30,6 @@ kanallarıyla Bluetooth ve donanım bilgisi ve **tamamen JavaScript ile yazılm�
 - `/notlar` listesi ve `/not/:key` detay sayfası.
 - Not ekleme, düzenleme ve silme.
 
-### 3B küp
-- Sohbet 3 ekranında `AnimationController` ile sürekli dönen `RotatingCube3D`.
 
 ### Ağ durumu
 - `connectivity_plus` ile bağlantı takibi.
@@ -93,7 +91,7 @@ kanallarıyla Bluetooth ve donanım bilgisi ve **tamamen JavaScript ile yazılm�
 - Remote Config varsayılanları: bakım modu, yeni sohbet özelliği ve mesaj
   uzunluğu limiti.
 
-### Ödeme simülasyonu (6 aşama, tamamen JavaScript)
+### Ödeme simülasyonu (6 aşama)
 `assets/payment/payment_simulation.html` içinde HTML + CSS + JavaScript olarak
 yazılmıştır. Flutter tarafı yalnızca `webview_flutter` ile barındırır.
 
@@ -199,41 +197,6 @@ yinelenen bildirimleri engeller ve sonucu arayüzde gösterir.
 - Android SDK (compileSdk 36)
 - Android Studio / emülatör veya fiziksel cihaz
 
-### Adımlar
-
-```sh
-flutter pub get
-dart run build_runner build
-flutter run
-```
-
-- `auto_route`, `retrofit` ve `json_serializable` kodları `build_runner` ile
-  üretilir. Yeni sayfa/rota ekledikten sonra tekrar çalıştırın.
-- Geliştirme sırasında sürekli üretim için: `dart run build_runner watch`
-
-### Android derleme
-
-```sh
-flutter build apk --debug
-adb install -r build/app/outputs/flutter-apk/app-debug.apk
-```
-
-- Release imzalama için `android/key.properties` ve keystore dosyası gerekir.
-  Bu dosyalar güvenlik nedeniyle `.gitignore` içindedir; repoya eklenmemelidir.
-- Firebase yapılandırması `android/app/google-services.json` ve
-  `lib/firebase_options.dart` üzerinden gelir. Kendi Firebase projeniz için
-  `flutterfire configure` kullanın.
-
-### Web
-
-```sh
-flutter run -d web-server --web-port 8123 --web-hostname 127.0.0.1
-```
-
-> `device_hardware_info` ve `bluetooth_info` yalnızca Android'de çalışır; diğer
-> platformlarda cihaz bilgisi sayfası açıklayıcı bir hata gösterir.
-
----
 
 ## Testler
 
@@ -261,8 +224,6 @@ Son durum: **37/37 test geçiyor**, `flutter analyze` temiz.
 
 - Android 10+ için IMEI/seri no okuma kısıtı (device owner/sistem uygulaması
   gerekir).
-- Root tespiti sezgiseldir; kesin sonuç vermez.
-- Bluetooth taraması emülatörde gerçek cihaz bulamaz.
 - Ödeme ekranı bir **simülasyondur**; gerçek ödeme ağına bağlanmaz.
 - Medya mesajları yalnızca bellekte tutulur.
 - LLM API anahtarları yerel Hive kutusunda saklanır; üretimde güvenli
@@ -280,4 +241,3 @@ Son durum: **37/37 test geçiyor**, `flutter analyze` temiz.
 - Tamamen JavaScript ile 6 aşamalı ödeme simülasyonu ve `PaymentBridge`.
 - `PaymentSimulationPage` (WebView), `/odeme` rotası ve ana sayfa kartı.
 - `PaymentSimulationResult` modeli ve birim testleri.
-- Root tespitinde emülatöre özgü `userdebug` yanlış pozitifi kaldırıldı.
