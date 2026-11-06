@@ -395,9 +395,6 @@ class DeviceHardwareInfoPlugin :
         if (Build.TAGS?.contains("test-keys") == true) {
             indicators.add("Build etiketi: test-keys")
         }
-        if (Build.TYPE == "userdebug" || Build.TYPE == "eng") {
-            indicators.add("Build tipi: ${Build.TYPE}")
-        }
 
         return indicators.isNotEmpty() to indicators
     }
