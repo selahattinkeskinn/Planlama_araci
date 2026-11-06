@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<title>Ödeme Simülasyonu</title>
+<style>
+  :root {
+    --bg: #070b18;
+    --panel: rgba(255, 255, 255, 0.045);
+    --panel-border: rgba(255, 255, 255, 0.09);
+    --text: #e8ecff;
+    --muted: #93a0c4;
+    --primary: #7c5cff;
+    --cyan: #38d9f5;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(124, 92, 255, 0.22), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(56, 217, 245, 0.16), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .shell {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 18px 16px 28px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(140deg, var(--primary), var(--cyan));
+    box-shadow: 0 10px 26px rgba(124, 92, 255, 0.35);
+    flex: 0 0 auto;
+  }
+
+  h1 { font-size: 17px; margin: 0; letter-spacing: 0.2px; }
+  header p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+
+  .badge {
+    flex: 0 0 auto;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    font-weight: 800;
+    color: var(--amber);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: rgba(251, 191, 36, 0.1);
+    padding: 5px 9px;
+    border-radius: 999px;
+  }
+
+  /* Adım göstergesi */
+  .stepper {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .step {
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    transition: color 0.2s ease;
+  }
+
+  .step .dot {
+    width: 26px;
+    height: 26px;
+    margin: 0 auto 5px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    transition: all 0.2s ease;
+  }
+
+  .step.active { color: var(--cyan); }
+  .step.active .dot {
+    border-color: var(--cyan);
+    color: #04121a;
+    background: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(56, 217, 245, 0.12);
+  }
+
+  .step.done .dot {
+    border-color: rgba(52, 211, 153, 0.55);
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.12);
+  }
+
+  /* Paneller */
+  .panel {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    padding: 18px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel h2 { margin: 0 0 2px; font-size: 15px; }
+  .panel .sub { margin: 0 0 16px; font-size: 11.5px; color: var(--muted); }
+
+  label {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px 13px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+  }
+
+  input::placeholder { color: rgba(147, 160, 196, 0.6); }
+
+  input:focus, select:focus {
+    border-color: rgba(56, 217, 245, 0.65);
+    box-shadow: 0 0 0 3px rgba(56, 217, 245, 0.12);
+  }
+
+  .field { margin-bottom: 13px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap input { padding-right: 74px; }
+
+  .brand-tag {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    color: var(--cyan);
+    background: rgba(56, 217, 245, 0.12);
+    border: 1px solid rgba(56, 217, 245, 0.25);
+    padding: 3px 7px;
+    border-radius: 999px;
+    visibility: hidden;
+  }
+
+  .brand-tag.show { visibility: visible; }
+
+  .checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin: 4px 0 2px;
+    cursor: pointer;
+  }
+
+  .checkbox input {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+    margin: 1px 0 0;
+    accent-color: var(--primary);
+  }
+
+  .summary {
+    border-radius: 14px;
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 14px;
+    margin: 4px 0 14px;
+    font-size: 12px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 0;
+    color: var(--muted);
+  }
+
+  .summary-row strong { color: var(--text); font-weight: 700; }
+  .summary-row.total { border-top: 1px solid rgba(255, 255, 255, 0.09); margin-top: 6px; padding-top: 9px; }
+  .summary-row.total strong { color: var(--cyan); font-size: 14px; }
+
+  .sim-hint {
+    border-radius: 12px;
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    background: rgba(251, 191, 36, 0.09);
+    color: #fcd34d;
+    font-size: 11.5px;
+    padding: 10px 12px;
+    margin-bottom: 13px;
+  }
+
+  .error {
+    display: none;
+    border-radius: 12px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.1);
+    color: #fca5a5;
+    font-size: 11.5px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .error.show { display: block; animation: shake 0.3s ease; }
+
+  .error.info {
+    border-color: rgba(56, 217, 245, 0.35);
+    background: rgba(56, 217, 245, 0.1);
+    color: #a5f3fc;
+    animation: none;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .banks { display: grid; gap: 10px; margin-bottom: 14px; }
+
+  .bank-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 13px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  .bank-option input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--primary); }
+
+  .bank-option.selected {
+    border-color: rgba(124, 92, 255, 0.55);
+    background: rgba(124, 92, 255, 0.12);
+  }
+
+  .secure-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(56, 217, 245, 0.25);
+    background: rgba(56, 217, 245, 0.07);
+    margin-bottom: 13px;
+  }
+
+  .secure-box .lock { font-size: 22px; }
+  .secure-box strong { display: block; font-size: 12.5px; margin-bottom: 2px; }
+  .secure-box span { font-size: 11px; color: var(--muted); }
+
+  .processing {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(124, 92, 255, 0.1);
+    border: 1px solid rgba(124, 92, 255, 0.3);
+    font-size: 12px;
+    color: #c4b5fd;
+    margin-bottom: 12px;
+  }
+
+  .processing.show { display: flex; }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(196, 181, 253, 0.25);
+    border-top-color: #c4b5fd;
+    animation: spin 0.8s linear infinite;
+    flex: 0 0 auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-icon, .fail-icon {
+    width: 64px;
+    height: 64px;
+    margin: 4px auto 14px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    font-weight: 800;
+  }
+
+  .success-icon {
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.13);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+  }
+
+  .fail-icon {
+    color: var(--red);
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+  }
+
+  .result-title { text-align: center; font-size: 17px; margin: 0 0 4px; }
+  .result-sub { text-align: center; font-size: 11.5px; color: var(--muted); margin: 0 0 16px; }
+
+  .receipt {
+    border-radius: 14px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 14px;
+    margin-bottom: 14px;
+  }
+
+  .receipt .summary-row { font-size: 11.5px; }
+  .receipt .summary-row span:last-child { text-align: right; }
+
+  footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  button {
+    flex: 1;
+    padding: 13px 16px;
+    border-radius: 13px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.12s ease, opacity 0.15s ease;
+  }
+
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary), #5b7cfa);
+    box-shadow: 0 10px 24px rgba(124, 92, 255, 0.3);
+  }
+
+  .ghost {
+    flex: 0 0 34%;
+    color: var(--text);
+    border-color: var(--panel-border);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .danger {
+    color: #fff;
+    background: rgba(248, 113, 113, 0.85);
+  }
+
+  .hidden { display: none !important; }
+
+  .foot-note {
+    text-align: center;
+    font-size: 9.5px;
+    color: rgba(147, 160, 196, 0.65);
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="logo">₺</div>
+      <div>
+        <h1>Güvenli Ödeme</h1>
+        <p>6 aşamalı doğrulama · JavaScript simülasyonu</p>
+      </div>
+    </div>
+    <span class="badge">SİMÜLASYON</span>
+  </header>
+
+  <nav class="stepper" id="stepper" aria-label="Ödeme adımları"></nav>
+
+  <main>
+    <!-- 1 · KART -->
+    <section class="panel active" data-step="1">
+      <h2>Kart Bilgileri</h2>
+      <p class="sub">1/6 · Kart numarası Luhn algoritmasıyla doğrulanır.</p>
+
+      <div class="field">
+        <label for="cardNumber">KART NUMARASI</label>
+        <div class="input-wrap">
+          <input id="cardNumber" inputmode="numeric" autocomplete="cc-number"
+                 placeholder="0000 0000 0000 0000" maxlength="23" />
+          <span class="brand-tag" id="brandTag"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cardName">KART SAHİBİ</label>
+        <input id="cardName" autocomplete="cc-name" placeholder="AD SOYAD" />
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="expiry">SON KULLANMA</label>
+          <input id="expiry" inputmode="numeric" autocomplete="cc-exp"
+                 placeholder="AA/YY" maxlength="5" />
+        </div>
+        <div class="field">
+          <label for="cvv">CVV</label>
+          <input id="cvv" inputmode="numeric" autocomplete="cc-csc"
+                 placeholder="123" maxlength="4" type="password" />
+        </div>
+      </div>
+
+      <div class="error" id="error1"></div>
+    </section>
+
+    <!-- 2 · FATURA -->
+    <section class="panel" data-step="2">
+      <h2>Fatura Bilgileri</h2>
+      <p class="sub">2/6 · E-posta, telefon ve adres kontrol edilir.</p>
+
+      <div class="field">
+        <label for="billName">AD SOYAD</label>
+        <input id="billName" autocomplete="name" placeholder="Ad Soyad" />
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="billEmail">E-POSTA</label>
+          <input id="billEmail" type="email" autocomplete="email"
+                 placeholder="ornek@eposta.com" />
+        </div>
+        <div class="field">
+          <label for="billPhone">TELEFON</label>
+          <input id="billPhone" inputmode="tel" autocomplete="tel"
+                 placeholder="05XX XXX XX XX" maxlength="17" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="billCity">ŞEHİR</label>
+        <input id="billCity" autocomplete="address-level2" placeholder="İstanbul" />
+      </div>
+
+      <div class="field">
+        <label for="billAddress">ADRES</label>
+        <input id="billAddress" autocomplete="street-address"
+               placeholder="Mahalle, sokak, no" />
+      </div>
+
+      <div class="error" id="error2"></div>
+    </section>
+
+    <!-- 3 · TUTAR -->
+    <section class="panel" data-step="3">
+      <h2>Tutar ve Taksit</h2>
+      <p class="sub">3/6 · 10 ₺ – 50.000 ₺ arası, vade farkı hesaplanır.</p>
+
+      <div class="row">
+        <div class="field">
+          <label for="amount">TUTAR (₺)</label>
+          <input id="amount" inputmode="decimal" placeholder="1.250,00" />
+        </div>
+        <div class="field">
+          <label for="installment">TAKSİT</label>
+          <select id="installment">
+            <option value="1">Tek çekim</option>
+            <option value="3">3 taksit · %2,5</option>
+            <option value="6">6 taksit · %5</option>
+            <option value="9">9 taksit · %7,5</option>
+            <option value="12">12 taksit · %10</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="summary" id="amountSummary">
+        <div class="summary-row"><span>Tutar</span><strong id="sumAmount">0,00 ₺</strong></div>
+        <div class="summary-row"><span>Vade farkı</span><strong id="sumInterest">0,00 ₺</strong></div>
+        <div class="summary-row"><span>Aylık ödeme</span><strong id="sumMonthly">0,00 ₺</strong></div>
+        <div class="summary-row total"><span>Toplam</span><strong id="sumTotal">0,00 ₺</strong></div>
+      </div>
+
+      <label class="checkbox">
+        <input type="checkbox" id="terms" />
+        <span>Mesafeli satış sözleşmesini ve ön bilgilendirme formunu okudum, onaylıyorum.</span>
+      </label>
+
+      <div class="error" id="error3"></div>
+    </section>
+
+    <!-- 4 · SMS DOĞRULAMA -->
+    <section class="panel" data-step="4">
+      <h2>SMS Doğrulama</h2>
+      <p class="sub">4/6 · Telefonunuza gönderilen 6 haneli kod kontrol edilir.</p>
+
+      <div class="sim-hint">
+        Simülasyon SMS kodu: <strong class="mono" id="otpHint">------</strong>
+      </div>
+
+      <div class="field">
+        <label for="otp">DOĞRULAMA KODU</label>
+        <input id="otp" inputmode="numeric" maxlength="6" placeholder="6 haneli kod"
+               class="mono" autocomplete="one-time-code" />
+      </div>
+
+      <button type="button" class="ghost" id="resendOtp" style="flex:none;width:100%">
+        KODU YENİLE
+      </button>
+
+      <div class="error" id="error4"></div>
+    </section>
+
+    <!-- 5 · 3D SECURE -->
+    <section class="panel" data-step="5">
+      <h2>3D Secure Onayı</h2>
+      <p class="sub">5/6 · Banka doğrulaması simüle edilir.</p>
+
+      <div class="secure-box">
+        <div class="lock">🔒</div>
+        <div>
+          <strong>Banka güvenli ödeme</strong>
+          <span>Kart bilgileriniz bankaya şifreli iletilir (simülasyon).</span>
+        </div>
+      </div>
+
+      <label>BANKA</label>
+      <div class="banks" id="banks">
+        <label class="bank-option selected">
+          <input type="radio" name="bank" value="Ziraat Simülasyon" checked />
+          <span>Ziraat Simülasyon Bankası</span>
+        </label>
+        <label class="bank-option">
+          <input type="radio" name="bank" value="Garanti Simülasyon" />
+          <span>Garanti Simülasyon Bankası</span>
+        </label>
+        <label class="bank-option">
+          <input type="radio" name="bank" value="İş Bankası Simülasyon" />
+          <span>İş Bankası Simülasyon</span>
+        </label>
+      </div>
+
+      <label>BANKA SONUCU (SİMÜLASYON KONTROLÜ)</label>
+      <div class="banks">
+        <label class="bank-option selected">
+          <input type="radio" name="bankResult" value="approve" checked />
+          <span>✅ Onay — ödemeyi tamamla</span>
+        </label>
+        <label class="bank-option">
+          <input type="radio" name="bankResult" value="reject" />
+          <span>⛔ Red — başarısız ödeme senaryosu</span>
+        </label>
+      </div>
+
+      <div class="processing" id="processing">
+        <div class="spinner"></div>
+        <span>3D Secure doğrulanıyor, lütfen bekleyin…</span>
+      </div>
+
+      <div class="error" id="error5"></div>
+    </section>
+
+    <!-- 6 · SONUÇ -->
+    <section class="panel" data-step="6">
+      <div id="resultContent"></div>
+    </section>
+  </main>
+
+  <footer id="footer">
+    <button type="button" class="ghost" id="backBtn">GERİ</button>
+    <button type="button" class="primary" id="nextBtn">DEVAM</button>
+  </footer>
+
+  <p class="foot-note">
+    Bu ekran tamamen JavaScript ile yazılmış bir ödeme simülasyonudur.<br />
+    Gerçek kart bilgisi girmeyin; hiçbir veri kaydedilmez veya gönderilmez.
+  </p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------
+  // Sabitler ve durum
+  // ---------------------------------------------------------------------
+
+  const STEP_LABELS = ['Kart', 'Fatura', 'Tutar', 'Doğrulama', '3D Secure', 'Sonuç'];
+  const MAX_OTP_ATTEMPTS = 3;
+  const INSTALLMENT_RATES = { 1: 0, 3: 0.025, 6: 0.05, 9: 0.075, 12: 0.1 };
+
+  const state = {
+    step: 1,
+    otpCode: '',
+    otpAttempts: 0,
+    processing: false,
+    notified: false,
+    result: null,
+  };
+
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+  // ---------------------------------------------------------------------
+  // Yardımcılar
+  // ---------------------------------------------------------------------
+
+  function onlyDigits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  function formatTRY(value) {
+    try {
+      return new Intl.NumberFormat('tr-TR', {
+        style: 'currency',
+        currency: 'TRY',
+        minimumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      return value.toFixed(2).replace('.', ',') + ' ₺';
+    }
+  }
+
+  function parseAmount(raw) {
+    if (raw === null || raw === undefined) return NaN;
+    let text = String(raw).trim().replace(/[^\d.,]/g, '');
+    if (text.indexOf(',') > -1 && text.indexOf('.') > -1) {
+      text = text.replace(/\./g, '').replace(',', '.');
+    } else if (text.indexOf(',') > -1) {
+      text = text.replace(',', '.');
+    } else if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+      // "1.250" gibi Türkçe binlik ayıracı.
+      text = text.replace(/\./g, '');
+    }
+    return parseFloat(text);
+  }
+
+  function luhnValid(number) {
+    if (!/^\d{13,19}$/.test(number)) return false;
+    let sum = 0;
+    let double = false;
+    for (let i = number.length - 1; i >= 0; i -= 1) {
+      let digit = Number(number[i]);
+      if (double) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      double = !double;
+    }
+    return sum % 10 === 0;
+  }
+
+  function detectBrand(number) {
+    if (/^4/.test(number)) return 'VISA';
+    if (/^(5[1-5]|2[2-7])/.test(number)) return 'MASTERCARD';
+    if (/^3[47]/.test(number)) return 'AMEX';
+    if (/^9792/.test(number)) return 'TROY';
+    return '';
+  }
+
+  function maskCard(number) {
+    const digits = onlyDigits(number);
+    return '**** **** **** ' + digits.slice(-4);
+  }
+
+  function nowStamp() {
+    const d = new Date();
+    const two = (n) => String(n).padStart(2, '0');
+    return (
+      two(d.getDate()) + '.' + two(d.getMonth() + 1) + '.' + d.getFullYear() +
+      ' ' + two(d.getHours()) + ':' + two(d.getMinutes())
+    );
+  }
+
+  function transactionId() {
+    const random = Math.floor(Math.random() * 46656).toString(36).toUpperCase();
+    return 'SIM-' + Date.now().toString(36).toUpperCase() + '-' + random.padStart(3, '0');
+  }
+
+  function notifyFlutter(payload) {
+    try {
+      if (window.PaymentBridge && typeof window.PaymentBridge.postMessage === 'function') {
+        window.PaymentBridge.postMessage(JSON.stringify(payload));
+      }
+    } catch (error) {
+      // Flutter tarafı yoksa sessizce devam et.
+    }
+  }
+
+  function showError(step, message) {
+    const box = $('#error' + step);
+    if (!box) return;
+    box.textContent = message;
+    box.classList.add('show');
+  }
+
+  function clearError(step) {
+    const box = $('#error' + step);
+    if (!box) return;
+    box.textContent = '';
+    box.classList.remove('show', 'info');
+  }
+
+  function clearAllErrors() {
+    for (let i = 1; i <= 5; i += 1) clearError(i);
+  }
+
+  function showInfo(step, message) {
+    const box = $('#error' + step);
+    if (!box) return;
+    box.textContent = message;
+    box.classList.add('show', 'info');
+  }
+
+  // ---------------------------------------------------------------------
+  // Adım göstergesi
+  // ---------------------------------------------------------------------
+
+  function buildStepper() {
+    const stepper = $('#stepper');
+    stepper.innerHTML = STEP_LABELS.map((label, index) => {
+      const number = index + 1;
+      return (
+        '<div class="step" data-step="' + number + '">' +
+        '<div class="dot">' + number + '</div>' +
+        '<div>' + label + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function updateStepper() {
+    $$('.step').forEach((element) => {
+      const number = Number(element.dataset.step);
+      element.classList.toggle('active', number === state.step);
+      element.classList.toggle('done', number < state.step && state.step <= 6);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Adım geçişleri
+  // ---------------------------------------------------------------------
+
+  function goToStep(step) {
+    state.step = step;
+    clearAllErrors();
+    $$('.panel').forEach((panel) => {
+      panel.classList.toggle('active', Number(panel.dataset.step) === step);
+    });
+    updateStepper();
+
+    $('#footer').classList.toggle('hidden', step >= 5);
+    $('#backBtn').classList.toggle('hidden', step <= 1);
+
+    if (step === 4) prepareOtp();
+    if (step === 5) renderPaymentSummary();
+    if (step === 6) renderResult();
+
+    if (step === 5) {
+      $('#nextBtn').classList.add('hidden');
+    } else {
+      $('#nextBtn').classList.remove('hidden');
+      $('#nextBtn').textContent = 'DEVAM';
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function nextStep() {
+    switch (state.step) {
+      case 1:
+        if (validateCard()) goToStep(2);
+        break;
+      case 2:
+        if (validateBilling()) goToStep(3);
+        break;
+      case 3:
+        if (validatePayment()) goToStep(4);
+        break;
+      case 4:
+        if (validateOtp()) goToStep(5);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // 1 · Kart doğrulama
+  // ---------------------------------------------------------------------
+
+  function validateCard() {
+    clearError(1);
+    const number = onlyDigits($('#cardNumber').value);
+    const name = $('#cardName').value.trim();
+    const expiry = $('#expiry').value.trim();
+    const cvv = onlyDigits($('#cvv').value);
+
+    if (!luhnValid(number)) {
+      showError(1, 'Kart numarası geçersiz. Luhn kontrolünden geçen bir numara girin (ör. 4242 4242 4242 4242).');
+      return false;
+    }
+    if (name.length < 3 || name.split(' ').length < 2) {
+      showError(1, 'Kart sahibinin adı ve soyadı girilmelidir.');
+      return false;
+    }
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+      showError(1, 'Son kullanma tarihi AA/YY biçiminde olmalıdır.');
+      return false;
+    }
+    const month = Number(expiry.slice(0, 2));
+    const year = 2000 + Number(expiry.slice(3));
+    const limit = new Date();
+    limit.setDate(1);
+    limit.setMonth(limit.getMonth() + 1);
+    if (new Date(year, month, 1) < limit) {
+      showError(1, 'Kartın son kullanma tarihi geçmiş.');
+      return false;
+    }
+    const requiredCvv = detectBrand(number) === 'AMEX' ? 4 : 3;
+    if (cvv.length < requiredCvv) {
+      showError(1, 'CVV en az ' + requiredCvv + ' haneli olmalıdır.');
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------------------------------------------------------
+  // 2 · Fatura doğrulama
+  // ---------------------------------------------------------------------
+
+  function validateBilling() {
+    clearError(2);
+    const name = $('#billName').value.trim();
+    const email = $('#billEmail').value.trim();
+    const phone = onlyDigits($('#billPhone').value);
+    const city = $('#billCity').value.trim();
+    const address = $('#billAddress').value.trim();
+
+    if (name.length < 3) {
+      showError(2, 'Fatura adı en az 3 karakter olmalıdır.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      showError(2, 'Geçerli bir e-posta adresi girin.');
+      return false;
+    }
+    if (phone.length !== 10 && phone.length !== 11) {
+      showError(2, 'Telefon 10 veya 11 haneli olmalıdır (başında 0 olabilir).');
+      return false;
+    }
+    if (city.length < 2) {
+      showError(2, 'Şehir bilgisi gerekli.');
+      return false;
+    }
+    if (address.length < 10) {
+      showError(2, 'Adres en az 10 karakter olmalıdır.');
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------------------------------------------------------
+  // 3 · Tutar / taksit doğrulama
+  // ---------------------------------------------------------------------
+
+  function installmentMonths() {
+    return Number($('#installment').value) || 1;
+  }
+
+  function paymentTotals() {
+    const amount = parseAmount($('#amount').value);
+    const months = installmentMonths();
+    const rate = INSTALLMENT_RATES[months] || 0;
+    const total = amount * (1 + rate);
+    return {
+      amount: isNaN(amount) ? 0 : amount,
+      months: months,
+      rate: rate,
+      interest: isNaN(amount) ? 0 : total - amount,
+      total: isNaN(amount) ? 0 : total,
+      monthly: isNaN(amount) ? 0 : total / months,
+    };
+  }
+
+  function renderAmountSummary() {
+    const totals = paymentTotals();
+    $('#sumAmount').textContent = formatTRY(totals.amount);
+    $('#sumInterest').textContent = formatTRY(totals.interest);
+    $('#sumMonthly').textContent =
+      totals.months > 1 ? formatTRY(totals.monthly) : 'Tek çekim';
+    $('#sumTotal').textContent = formatTRY(totals.total);
+  }
+
+  function validatePayment() {
+    clearError(3);
+    const amount = parseAmount($('#amount').value);
+    if (isNaN(amount) || amount < 10) {
+      showError(3, 'Tutar en az 10 ₺ olmalıdır.');
+      return false;
+    }
+    if (amount > 50000) {
+      showError(3, 'Simülasyon limiti 50.000 ₺\'dir.');
+      return false;
+    }
+    if (!$('#terms').checked) {
+      showError(3, 'Devam etmek için sözleşmeyi onaylamanız gerekir.');
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------------------------------------------------------
+  // 4 · OTP doğrulama
+  // ---------------------------------------------------------------------
+
+  function generateOtp() {
+    let code = '';
+    if (window.crypto && window.crypto.getRandomValues) {
+      const buffer = new Uint32Array(1);
+      window.crypto.getRandomValues(buffer);
+      code = String(buffer[0] % 1000000).padStart(6, '0');
+    } else {
+      code = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+    }
+    return code;
+  }
+
+  function prepareOtp() {
+    if (!state.otpCode) {
+      state.otpCode = generateOtp();
+      state.otpAttempts = 0;
+    }
+    $('#otpHint').textContent = state.otpCode;
+    $('#otp').value = '';
+    $('#otp').disabled = false;
+    $('#resendOtp').disabled = false;
+  }
+
+  function validateOtp() {
+    clearError(4);
+    const entered = onlyDigits($('#otp').value);
+
+    if (entered.length !== 6) {
+      showError(4, 'Doğrulama kodu 6 haneli olmalıdır.');
+      return false;
+    }
+    if (entered !== state.otpCode) {
+      state.otpAttempts += 1;
+      const remaining = MAX_OTP_ATTEMPTS - state.otpAttempts;
+      if (remaining > 0) {
+        showError(4, 'Kod hatalı. Kalan deneme hakkı: ' + remaining + '.');
+      } else {
+        $('#otp').disabled = true;
+        showError(4, 'Çok fazla hatalı deneme. Yeni kod isteyin.');
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function resendOtp() {
+    state.otpCode = generateOtp();
+    state.otpAttempts = 0;
+    clearError(4);
+    prepareOtp();
+    showInfo(4, 'Yeni kod oluşturuldu: ' + state.otpCode);
+  }
+
+  // ---------------------------------------------------------------------
+  // 5 · 3D Secure
+  // ---------------------------------------------------------------------
+
+  function renderPaymentSummary() {
+    const totals = paymentTotals();
+    const summary = $('#secureSummary');
+    if (!summary) return;
+    summary.innerHTML =
+      '<div class="summary-row"><span>Kart</span><strong>' +
+      maskCard($('#cardNumber').value) +
+      '</strong></div>' +
+      '<div class="summary-row"><span>Taksit</span><strong>' +
+      (totals.months > 1 ? totals.months + ' taksit' : 'Tek çekim') +
+      '</strong></div>' +
+      '<div class="summary-row total"><span>Toplam</span><strong>' +
+      formatTRY(totals.total) +
+      '</strong></div>';
+  }
+
+  function selectedResult() {
+    const checked = document.querySelector('input[name="bankResult"]:checked');
+    return checked ? checked.value : 'approve';
+  }
+
+  function selectedBank() {
+    const checked = document.querySelector('input[name="bank"]:checked');
+    return checked ? checked.value : 'Banka';
+  }
+
+  function processPayment() {
+    if (state.processing) return;
+    state.processing = true;
+
+    const totals = paymentTotals();
+    const approved = selectedResult() === 'approve';
+    const bank = selectedBank();
+
+    $('#processing').classList.add('show');
+    $('#error5').classList.remove('show');
+    $$('.panel button').forEach((element) => {
+      element.disabled = true;
+    });
+
+    window.setTimeout(function () {
+      state.processing = false;
+      state.result = {
+        approved: approved,
+        transactionId: transactionId(),
+        amount: totals.amount,
+        total: totals.total,
+        interest: totals.interest,
+        monthly: totals.monthly,
+        months: totals.months,
+        card: maskCard($('#cardNumber').value),
+        bank: bank,
+        reason: approved ? null : 'bank_rejected',
+        date: nowStamp(),
+      };
+
+      goToStep(6);
+      $('#processing').classList.remove('show');
+      $$('.panel button').forEach((element) => {
+        element.disabled = false;
+      });
+    }, 1800);
+  }
+
+  // ---------------------------------------------------------------------
+  // 6 · Sonuç
+  // ---------------------------------------------------------------------
+
+  function renderResult() {
+    const result = state.result;
+    if (!result) return;
+
+    const container = $('#resultContent');
+
+    if (!state.notified) {
+      state.notified = true;
+      if (result.approved) {
+        notifyFlutter({
+          status: 'success',
+          transactionId: result.transactionId,
+          total: result.total,
+          months: result.months,
+        });
+      } else {
+        notifyFlutter({
+          status: 'failed',
+          reason: result.reason || 'bank_rejected',
+          transactionId: result.transactionId,
+          total: result.total,
+          bank: result.bank,
+        });
+      }
+    }
+
+    if (result.approved) {
+      container.innerHTML =
+        '<div class="success-icon">✓</div>' +
+        '<h2 class="result-title">Ödeme onaylandı</h2>' +
+        '<p class="result-sub">Simülasyon başarıyla tamamlandı.</p>' +
+        '<div class="receipt">' +
+        '<div class="summary-row"><span>İşlem No</span><span class="mono">' + result.transactionId + '</span></div>' +
+        '<div class="summary-row"><span>Kart</span><span class="mono">' + result.card + '</span></div>' +
+        '<div class="summary-row"><span>Banka</span><span>' + result.bank + '</span></div>' +
+        '<div class="summary-row"><span>Taksit</span><span>' + (result.months > 1 ? result.months + ' taksit' : 'Tek çekim') + '</span></div>' +
+        '<div class="summary-row"><span>Vade farkı</span><span>' + formatTRY(result.interest) + '</span></div>' +
+        '<div class="summary-row"><span>Tarih</span><span>' + result.date + '</span></div>' +
+        '<div class="summary-row total"><span>Toplam</span><strong>' + formatTRY(result.total) + '</strong></div>' +
+        '</div>' +
+        '<button type="button" class="primary" id="restartBtn" style="width:100%">YENİ ÖDEME</button>';
+    } else {
+      container.innerHTML =
+        '<div class="fail-icon">✕</div>' +
+        '<h2 class="result-title">Ödeme reddedildi</h2>' +
+        '<p class="result-sub">Banka simülasyonu işlemi onaylamadı.</p>' +
+        '<div class="receipt">' +
+        '<div class="summary-row"><span>İşlem No</span><span class="mono">' + result.transactionId + '</span></div>' +
+        '<div class="summary-row"><span>Kart</span><span class="mono">' + result.card + '</span></div>' +
+        '<div class="summary-row"><span>Banka</span><span>' + result.bank + '</span></div>' +
+        '<div class="summary-row"><span>Neden</span><span>Banka reddi (simülasyon)</span></div>' +
+        '<div class="summary-row total"><span>Tutar</span><strong>' + formatTRY(result.total) + '</strong></div>' +
+        '</div>' +
+        '<button type="button" class="primary" id="restartBtn" style="width:100%">YENİDEN DENE</button>';
+    }
+
+    const restart = $('#restartBtn');
+    if (restart) restart.addEventListener('click', resetSimulation);
+  }
+
+  function resetSimulation() {
+    state.step = 1;
+    state.otpCode = '';
+    state.otpAttempts = 0;
+    state.processing = false;
+    state.notified = false;
+    state.result = null;
+
+    $$('input').forEach((input) => {
+      if (input.type === 'checkbox' || input.type === 'radio') {
+        input.checked = input.defaultChecked;
+      } else {
+        input.value = '';
+      }
+    });
+    $('#installment').value = '1';
+    $('#brandTag').classList.remove('show');
+    $('#brandTag').textContent = '';
+    $('#error5').classList.remove('show');
+    $('#processing').classList.remove('show');
+    renderAmountSummary();
+    notifyFlutter({ status: 'reset' });
+    goToStep(1);
+  }
+
+  // ---------------------------------------------------------------------
+  // Giriş biçimlendirme
+  // ---------------------------------------------------------------------
+
+  function bindInputs() {
+    $('#cardNumber').addEventListener('input', function (event) {
+      const digits = onlyDigits(event.target.value).slice(0, 19);
+      event.target.value = digits.replace(/(.{4})/g, '$1 ').trim();
+      const brand = detectBrand(digits);
+      const tag = $('#brandTag');
+      tag.textContent = brand;
+      tag.classList.toggle('show', brand !== '');
+    });
+
+    $('#expiry').addEventListener('input', function (event) {
+      const digits = onlyDigits(event.target.value).slice(0, 4);
+      event.target.value =
+        digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
+    });
+
+    $('#cvv').addEventListener('input', function (event) {
+      event.target.value = onlyDigits(event.target.value).slice(0, 4);
+    });
+
+    $('#billPhone').addEventListener('input', function (event) {
+      const digits = onlyDigits(event.target.value).slice(0, 11);
+      if (digits.length <= 4) {
+        event.target.value = digits;
+      } else if (digits.length <= 7) {
+        event.target.value = digits.slice(0, 4) + ' ' + digits.slice(4);
+      } else if (digits.length <= 9) {
+        event.target.value =
+          digits.slice(0, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7);
+      } else {
+        event.target.value =
+          digits.slice(0, 4) + ' ' + digits.slice(4, 7) + ' ' +
+          digits.slice(7, 9) + ' ' + digits.slice(9);
+      }
+    });
+
+    $('#amount').addEventListener('input', renderAmountSummary);
+    $('#installment').addEventListener('change', renderAmountSummary);
+  }
+
+  // ---------------------------------------------------------------------
+  // Olaylar
+  // ---------------------------------------------------------------------
+
+  function bindEvents() {
+    $('#nextBtn').addEventListener('click', nextStep);
+
+    $('#backBtn').addEventListener('click', function () {
+      if (state.step > 1) goToStep(state.step - 1);
+    });
+
+    $('#resendOtp').addEventListener('click', resendOtp);
+
+    $('#otp').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') nextStep();
+    });
+
+    $$('input[name="bank"]').forEach((input) => {
+      input.addEventListener('change', function () {
+        $$('#banks .bank-option').forEach((option) => {
+          option.classList.toggle('selected', option.contains(input));
+        });
+      });
+    });
+
+    // 3D Secure ekranındaki onay/red düğmeleri panel içine JS ile eklenir.
+    const panel = document.querySelector('.panel[data-step="5"]');
+    const summary = document.createElement('div');
+    summary.className = 'summary';
+    summary.id = 'secureSummary';
+    panel.insertBefore(summary, $('#processing'));
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '10px';
+    actions.innerHTML =
+      '<button type="button" class="ghost" id="rejectBtn" style="flex:0 0 34%">VAZGEÇ</button>' +
+      '<button type="button" class="primary" id="payBtn">ÖDEMEYİ ONAYLA</button>';
+    panel.appendChild(actions);
+
+    $('#payBtn').addEventListener('click', processPayment);
+
+    $('#rejectBtn').addEventListener('click', function () {
+      state.result = {
+        approved: false,
+        transactionId: transactionId(),
+        amount: paymentTotals().amount,
+        total: paymentTotals().total,
+        interest: paymentTotals().interest,
+        monthly: paymentTotals().monthly,
+        months: paymentTotals().months,
+        card: maskCard($('#cardNumber').value),
+        bank: selectedBank(),
+        reason: 'user_cancelled',
+        date: nowStamp(),
+      };
+      goToStep(6);
+    });
+
+    $$('input[name="bankResult"]').forEach((input) => {
+      input.addEventListener('change', function () {
+        $$('.bank-option').forEach((option) => {
+          const radio = option.querySelector('input[name="bankResult"]');
+          if (radio) option.classList.toggle('selected', radio === input);
+        });
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Başlat
+  // ---------------------------------------------------------------------
+
+  function init() {
+    buildStepper();
+    bindInputs();
+    bindEvents();
+    renderAmountSummary();
+    goToStep(1);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
